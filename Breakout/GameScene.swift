@@ -125,10 +125,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // now, figure the number and spacing of each row of bricks
         let count = Int(frame.width) / 55    // bricks per row
         let xOffset = (Int(frame.width) - (count * 55)) / 2 + Int(frame.minX) + 25
-        let y = Int(frame.maxY) - 65
-        for i in 0..<count {
-            let x = i * 55 + xOffset
-            makeBrick(x: x, y: y, color: .green)
+        let colors: [UIColor] = [.blue, .orange, .green]
+        for r in 0..<3 {
+            let y = Int(frame.maxY) - 65 - (r * 25)
+            for i in 0..<count {
+                let x = i * 55 + xOffset
+                makeBrick(x: x, y: y, color: colors[r])
+            }
         }
     }
     
@@ -202,24 +205,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             brickNode = contact.bodyB.node
         }
         
-        // 2. If we hit a brick, remove only that specific brick
+        // 2. If we hit a green brick, remove only that specific brick
+        // When hit blue bricks turn orange and orange bricks turn green
         if let brick = brickNode as? SKSpriteNode {
             score += 1
             updateLabels()
-            brick.removeFromParent()
-            
-            // Remove it from our tracking array so we don't try to clear it later
-            if let index = bricks.firstIndex(of: brick) {
-                bricks.remove(at: index)
+            if brick.color == .blue {
+                brick.color = .orange  //blue bricks turn orange
             }
-            
-            removedBricks += 1
-            if bricks.isEmpty { // A safer check than removedBricks == bricks.count
-                gameOver(winner: true)
+            else if brick.color == .orange {
+                brick.color = .green  // orange bricks turn green
+            }
+            else { // must be green brick to be removed
+                brick.removeFromParent()
+                
+                // Remove it from our tracking array so we don't try to clear it later
+                if let index = bricks.firstIndex(of: brick) {
+                    bricks.remove(at: index)
+                }
+                
+                removedBricks += 1
+                if bricks.isEmpty {
+                    gameOver(winner: true)
+                }
             }
         }
         
-        // 3. Keep your existing Lose Zone detection logic
+        // 3. Lose Zone detection logic
         if contact.bodyA.node?.name == "loseZone" ||
             contact.bodyB.node?.name == "loseZone" {
             lives -= 1
